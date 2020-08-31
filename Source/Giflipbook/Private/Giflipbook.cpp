@@ -18,3 +18,5 @@ void FGiflipbookModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FGiflipbookModule, Giflipbook)
+
+DEFINE_LOG_CATEGORY(LogGiflipbook)

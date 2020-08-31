@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogGiflipbook, Verbose, All);
+
 class FGiflipbookModule : public IModuleInterface
 {
 public:
