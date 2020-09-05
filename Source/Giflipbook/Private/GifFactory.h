@@ -23,5 +23,7 @@ public:
 	virtual UObject* FactoryCreateBinary(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, const TCHAR* Type, const uint8*& Buffer, const uint8* BufferEnd, class FFeedbackContext* Warn) override;
 
 private:
+	class UTexture2D* CreateTextureFromRawData(UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, class FFeedbackContext* Warn, const TArray<uint8>& InRawData, const long& InWidth, const long& InHeight);
+
 	static void Frame(void* data, struct GIF_WHDR* whdr);
 };
