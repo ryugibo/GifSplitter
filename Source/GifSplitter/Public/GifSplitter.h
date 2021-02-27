@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogGiflipbook, Verbose, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogGifSplitter, Verbose, All);
 
-class FGiflipbookModule : public IModuleInterface
+class FGifSplitterModule : public IModuleInterface
 {
 public:
 

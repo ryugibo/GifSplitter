@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class Giflipbook : ModuleRules
+public class GifSplitter : ModuleRules
 {
-	public Giflipbook(ReadOnlyTargetRules Target) : base(Target)
+	public GifSplitter(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
