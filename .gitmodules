@@ -1,3 +1,3 @@
-[submodule "Source/Giflipbook/Private/gif_load"]
-	path = Source/Giflipbook/Private/gif_load
+[submodule "Source/GifSplitter/Private/gif_load"]
+	path = Source/GifSplitter/Private/gif_load
 	url = https://github.com/ryugibo/gif_load

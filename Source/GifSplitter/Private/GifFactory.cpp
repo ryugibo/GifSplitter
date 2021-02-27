@@ -2,7 +2,7 @@
 
 #include "GifFactory.h"
 
-#include "Giflipbook.h"
+#include "GifSplitter.h"
 
 #include "AssetToolsModule.h"
 #include "AssetRegistryModule.h"
@@ -71,7 +71,7 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 	// TODO; Support mode
 	//GifFrame->mode
 
-	UE_LOG(LogGiflipbook, Log, TEXT("VVVVVVVVVVVVVVVVVVVVVVVV"));
+	UE_LOG(LogGifSplitter, Log, TEXT("VVVVVVVVVVVVVVVVVVVVVVVV"));
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -82,7 +82,7 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 		CurrentFrame.Frame[i * 4 + 3] = bIsTransparent ? 0 : 255;
 	}
 
-	UE_LOG(LogGiflipbook, Log, TEXT("AAAAAAAAAAAAAAAAAAAAAAAA"));
+	UE_LOG(LogGifSplitter, Log, TEXT("AAAAAAAAAAAAAAAAAAAAAAAA"));
 
 	GifData->Add(CurrentFrame);
 }
