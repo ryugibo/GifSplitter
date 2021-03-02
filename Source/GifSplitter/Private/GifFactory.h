@@ -3,12 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "Factories/TextureFactory.h"
-
-#include "gif_load/gif_load.h"
-
 #include "GifFactory.generated.h"
+
 
 /**
  *
@@ -25,7 +22,5 @@ public:
 	//~ End UFactory Interface
 
 private:
-	class UTexture2D* CreateTextureFromRawData(UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, class FFeedbackContext* Warn, const TArray<uint8>& InRawData, const long& InWidth, const long& InHeight);
-
 	static void Frame(void* data, struct GIF_WHDR* whdr);
 };

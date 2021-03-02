@@ -1,23 +1,12 @@
 // Copyright 2020 Ryugibo, Inc. All Rights Reserved.
 
 #include "GifFactory.h"
-
 #include "GifSplitter.h"
-
-#include "AssetToolsModule.h"
 #include "AssetRegistryModule.h"
-#include "Engine/Texture2D.h"
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
-#include "ObjectTools.h"
-#include "PackageTools.h"
+#include "Factories.h"
+#include "Serialization/BufferArchive.h"
+#include "gif_load/gif_load.h"
 
-struct FrameData
-{
-	TArray<uint8> Frame;
-	long Width;
-	long Height;
-};
 
 UGifFactory::UGifFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -40,132 +29,63 @@ UObject* UGifFactory::FactoryCreateBinary
 	FFeedbackContext*	Warn
 )
 {
-	TArray<FrameData> GifData;
-	UTexture2D* Texture = nullptr;
+	TArray<TArray<uint8>> GifData;
 	GIF_Load((void*)Buffer, BufferEnd - Buffer, UGifFactory::Frame, 0, (void*)&GifData, 0L);
 
+	UObject* LastObject = nullptr;
 	for (int i = 0; i < GifData.Num(); ++i) {
+		TArray<uint8>& FrameBuffer = GifData[i];
+		const uint8* PtrFrameBuffer = FrameBuffer.GetData();
+		const uint8* PtrFrameBufferEnd = PtrFrameBuffer + FrameBuffer.Num();
+
 		FString FileName = FString::Printf(TEXT("%s_%d"), *Name.ToString(), i);
-		UTexture2D* CreatedTexture = CreateTextureFromRawData(InParent, *FileName, Flags, Context, Warn, GifData[i].Frame, GifData[i].Width, GifData[i].Height);
-		if (CreatedTexture == nullptr) {
-			return nullptr;
+		LastObject = Super::FactoryCreateBinary(Class, InParent, *FileName, Flags, Context, Type, PtrFrameBuffer, PtrFrameBufferEnd, Warn);
+		if (i < (GifData.Num() - 1))
+		{
+			FAssetRegistryModule::AssetCreated(LastObject);
+			LastObject->MarkPackageDirty();
+			LastObject->PostEditChange();
 		}
 	}
-	return nullptr;
+	return LastObject;
 }
-
 
 void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 {
-	TArray<FrameData>* GifData = (TArray<FrameData>*)RawData;
+	TArray<TArray<uint8>>* GifData = (TArray<TArray<uint8>>*)RawData;
+	const TArray<uint8>& BeforeFrame = (GifData->Num() == 0) ? TArray<uint8>() : GifData->Last();
 
-	FrameData CurrentFrame;
-	CurrentFrame.Width = GifFrame->xdim;
-	CurrentFrame.Height = GifFrame->ydim;
-	long size = CurrentFrame.Width * CurrentFrame.Height;
-	CurrentFrame.Frame.AddUninitialized(size * 4);
+	FTGAFileHeader TGAHeader;
 
-	// TODO: Support interlace
-	//GifFrame->intr
+	TGAHeader.IdFieldLength; // 0
+	TGAHeader.ColorMapType = 0; // 1
+	TGAHeader.ImageTypeCode = 2; // 2
+	TGAHeader.ColorMapOrigin; // 3
+	TGAHeader.ColorMapLength; // 5
+	TGAHeader.ColorMapEntrySize; // 7
+	TGAHeader.XOrigin; // 8
+	TGAHeader.YOrigin; // 10
+	TGAHeader.Width = GifFrame->xdim; // 12
+	TGAHeader.Height = GifFrame->ydim; // 14
+	TGAHeader.BitsPerPixel = 32; // 16
+	TGAHeader.ImageDescriptor = 0x20; // 17
 
-	// TODO; Support mode
-	//GifFrame->mode
+	FBufferArchive Buffer;
+	Buffer << TGAHeader;
 
-	UE_LOG(LogGifSplitter, Log, TEXT("VVVVVVVVVVVVVVVVVVVVVVVV"));
+	uint32 Size = GifFrame->xdim * GifFrame->ydim;
 
-	for (int i = 0; i < size; ++i)
+	for (uint32 i = 0; i < Size; ++i)
 	{
-		bool bIsTransparent = GifFrame->tran == GifFrame->bptr[i];
-		CurrentFrame.Frame[i * 4 + 0] = GifFrame->cpal[GifFrame->bptr[i]].B;
-		CurrentFrame.Frame[i * 4 + 1] = GifFrame->cpal[GifFrame->bptr[i]].G;
-		CurrentFrame.Frame[i * 4 + 2] = GifFrame->cpal[GifFrame->bptr[i]].R;
-		CurrentFrame.Frame[i * 4 + 3] = bIsTransparent ? 0 : 255;
-	}
-
-	UE_LOG(LogGifSplitter, Log, TEXT("AAAAAAAAAAAAAAAAAAAAAAAA"));
-
-	GifData->Add(CurrentFrame);
-}
-
-UTexture2D* UGifFactory::CreateTextureFromRawData
-(
-	UObject*				InParent,
-	FName					Name,
-	EObjectFlags			Flags,
-	UObject*				Context,
-	FFeedbackContext*		Warn,
-	const TArray<uint8>&	InRawData,
-	const long&				Width,
-	const long&				Height
-)
-{
-	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-
-	TSharedPtr<IImageWrapper> BmpImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::BMP);
-	if (!BmpImageWrapper.IsValid())
-	{
-		return nullptr;
-	}
-	if (!BmpImageWrapper->SetRaw(InRawData.GetData(), InRawData.Num(), Width, Height, ERGBFormat::BGRA, 8))
-	{
-		return nullptr;
-	}
-	// Check the resolution of the imported texture to ensure validity
-	//if (!IsImportResolutionValid(BmpImageWrapper->GetWidth(), BmpImageWrapper->GetHeight(), /*bAllowNonPowerOfTwo*/ true, Warn))
-	//{
-	//	return nullptr;
-	//}
-
-
-	FString TextureName = ObjectTools::SanitizeObjectName(FString::Printf(TEXT("T_%s"), *Name.ToString()));
-
-	FString BasePackageName = FPackageName::GetLongPackagePath(InParent->GetName()) / TextureName;
-	BasePackageName = PackageTools::SanitizePackageName(BasePackageName);
-
-
-	FString ObjectPath = BasePackageName + TEXT(".") + TextureName;
-	UTexture* ExistingTexture = LoadObject<UTexture>(NULL, *ObjectPath, nullptr, LOAD_Quiet | LOAD_NoWarn);
-
-	UPackage* TexturePackage = nullptr;
-	if (ExistingTexture == nullptr)
-	{
-		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
-		FString FinalPackageName;
-		AssetToolsModule.Get().CreateUniqueAssetName(BasePackageName, TEXT(""), FinalPackageName, TextureName);
-
-		TexturePackage = CreatePackage(NULL, *FinalPackageName);
-	}
-	else
-	{
-		TexturePackage = ExistingTexture->GetOutermost();
-	}
-
-	UTexture2D* Texture = CreateTexture2D(TexturePackage, *TextureName, Flags);
-	if (Texture)
-	{
-		// Set texture properties.
-		Texture->Source.Init(
-			BmpImageWrapper->GetWidth(),
-			BmpImageWrapper->GetHeight(),
-			/*NumSlices=*/ 1,
-			/*NumMips=*/ 1,
-			TSF_BGRA8
-		);
-		TArray<uint8> RawBMP;
-		if (BmpImageWrapper->GetRaw(BmpImageWrapper->GetFormat(), BmpImageWrapper->GetBitDepth(), RawBMP))
+		uint32 Frame = 0;
+		if (GifFrame->tran != GifFrame->bptr[i])
 		{
-			uint8* MipData = Texture->Source.LockMip(0);
-			FMemory::Memcpy(MipData, RawBMP.GetData(), RawBMP.Num());
-			Texture->Source.UnlockMip(0);
+			// RRGGBBAA
+			Frame = (GifFrame->cpal[GifFrame->bptr[i]].R << 24) | (GifFrame->cpal[GifFrame->bptr[i]].G << 16) | (GifFrame->cpal[GifFrame->bptr[i]].B << 8) | 0xFF;
 		}
-		TexturePackage->SetDirtyFlag(true);
-		CleanUp();
+
+		Buffer << Frame;
 	}
-	FAssetRegistryModule::AssetCreated(Texture);
-	Texture->MarkPackageDirty();
-	Texture->PostEditChange();
 
-	return Texture;
+	GifData->Add(Buffer);
 }
-
-#undef LOCTEXT_NAMESPACE
