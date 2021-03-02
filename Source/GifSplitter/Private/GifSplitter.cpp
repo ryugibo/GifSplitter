@@ -2,7 +2,6 @@
 
 #include "GifSplitter.h"
 
-#define LOCTEXT_NAMESPACE "FGifSplitterModule"
 
 void FGifSplitterModule::StartupModule()
 {
@@ -15,8 +14,6 @@ void FGifSplitterModule::ShutdownModule()
 	// we call this function before unloading the module.
 }
 
-#undef LOCTEXT_NAMESPACE
-	
 IMPLEMENT_MODULE(FGifSplitterModule, GifSplitter)
 
 DEFINE_LOG_CATEGORY(LogGifSplitter)
