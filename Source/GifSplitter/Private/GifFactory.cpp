@@ -8,13 +8,6 @@
 #include "gif_load/gif_load.h"
 
 
-struct FGifData
-{
-	TArray<uint32> BeforePixel;
-	TArray<uint32> LastValidPixel;
-	TArray<TArray<uint8>> Buffer;
-};
-
 const long UGifFactory::INTERLACED_OFFSETS[] = { 0, 4, 2, 1 };
 const long UGifFactory::INTERLACED_JUMPS[] = { 8, 8, 4, 2 };
 
@@ -102,31 +95,7 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 		{
 			for (long xd_i = 0; xd_i < GifFrame->xdim; ++xd_i)
 			{
-				long Index = xd_i + (yd_i * GifFrame->xdim);
-				uint32 Frame;
-				if (ParseFrame(xd_i, yd_i, GifFrame, &Frame))
-				{
-					GifData->LastValidPixel[Index] = Frame;
-				}
-				else
-				{
-					Frame = GifData->BeforePixel[Index];
-				}
-
-				switch (GifFrame->mode)
-				{
-				case GIF_NONE:
-				case GIF_CURR:
-					GifData->BeforePixel[Index] = Frame;
-					break;
-				case GIF_BKGD:
-					GifData->BeforePixel[Index] = GetBackground(GifFrame);
-					break;
-				case GIF_PREV:
-					GifData->BeforePixel[Index] = GifData->LastValidPixel[Index];
-					break;
-				}
-
+				uint32 Frame = ParseFrame(xd_i, yd_i, GifFrame, GifData);
 				Buffer << Frame;
 			}
 		}
@@ -139,31 +108,7 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 			{
 				for (long xd_i = 0; xd_i < GifFrame->xdim; ++xd_i)
 				{
-					long Index = xd_i + (yd_i * GifFrame->xdim);
-					uint32 Frame = 0;
-					if (ParseFrame(xd_i, yd_i, GifFrame, &Frame))
-					{
-						GifData->LastValidPixel[Index] = Frame;
-					}
-					else
-					{
-						Frame = GifData->BeforePixel[Index];
-					}
-
-					switch (GifFrame->mode)
-					{
-					case GIF_NONE:
-					case GIF_CURR:
-						GifData->BeforePixel[Index] = Frame;
-						break;
-					case GIF_BKGD:
-						GifData->BeforePixel[Index] = GetBackground(GifFrame);
-						break;
-					case GIF_PREV:
-						GifData->BeforePixel[Index] = GifData->LastValidPixel[Index];
-						break;
-					}
-
+					uint32 Frame = ParseFrame(xd_i, yd_i, GifFrame, GifData);
 					Buffer << Frame;
 				}
 			}
@@ -173,12 +118,13 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 	GifData->Buffer.Add(Buffer);
 }
 
-bool UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, uint32* OutColor)
+uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGifData* GifData)
 {
 	check(GifFrame != nullptr);
-	check(OutColor != nullptr);
+	check(GifData != nullptr);
 
-	uint32 Frame = 0;
+	long Index = IndexX + (IndexY * GifFrame->xdim);
+	uint32 OutFrame = 0;
 	if (FMath::IsWithin(IndexX, GifFrame->frxo, GifFrame->frxd) &&
 		FMath::IsWithin(IndexY, GifFrame->fryo, GifFrame->fryd))
 	{
@@ -186,11 +132,34 @@ bool UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, uint3
 		if (GifFrame->tran != GifFrame->bptr[FrameIndex])
 		{
 			// RRGGBBAA
-			*OutColor = (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 24) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B << 8) | 0xFF;
-			return true;
+			OutFrame = (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 24) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B << 8) | 0xFF;
 		}
 	}
-	return false;
+
+	if (OutFrame == 0)
+	{
+		OutFrame = GifData->BeforePixel[Index];
+	}
+	else
+	{
+		GifData->LastValidPixel[Index] = OutFrame;
+	}
+
+	switch (GifFrame->mode)
+	{
+	case GIF_NONE:
+	case GIF_CURR:
+		GifData->BeforePixel[Index] = OutFrame;
+		break;
+	case GIF_BKGD:
+		GifData->BeforePixel[Index] = GetBackground(GifFrame);
+		break;
+	case GIF_PREV:
+		GifData->BeforePixel[Index] = GifData->LastValidPixel[Index];
+		break;
+	}
+
+	return OutFrame;
 }
 
 uint32 UGifFactory::GetBackground(GIF_WHDR* GifFrame)
