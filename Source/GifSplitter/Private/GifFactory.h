@@ -22,5 +22,12 @@ public:
 	//~ End UFactory Interface
 
 private:
-	static void Frame(void* data, struct GIF_WHDR* whdr);
+	static void Frame(void* data, struct GIF_WHDR* GifFrame);
+
+	static bool ParseFrame(long IndexX, long IndexY, struct GIF_WHDR* GifFrame, uint32* OutColor);
+
+	FORCEINLINE static uint32 GetBackground(struct GIF_WHDR* GifFrame);
+
+	static const long INTERLACED_OFFSETS[];
+	static const long INTERLACED_JUMPS[];
 };
