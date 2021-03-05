@@ -41,7 +41,6 @@ public class GifSplitter : ModuleRules
 				"Slate",
 				"SlateCore",
 				"UnrealEd",
-				"ImageWrapper",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
