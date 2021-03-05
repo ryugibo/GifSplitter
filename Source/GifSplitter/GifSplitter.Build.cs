@@ -7,7 +7,9 @@ public class GifSplitter : ModuleRules
 	public GifSplitter(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
+
+		PublicDefinitions.Add("GIF_BIGE=0");
+
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...

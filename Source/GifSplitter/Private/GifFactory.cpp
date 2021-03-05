@@ -73,12 +73,12 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 
 	FTGAFileHeader TGAHeader;
 
-	TGAHeader.IdFieldLength; // 0
+	TGAHeader.IdFieldLength = 0; // 0
 	TGAHeader.ColorMapType = 0; // 1
 	TGAHeader.ImageTypeCode = 2; // 2
-	TGAHeader.ColorMapOrigin; // 3
-	TGAHeader.ColorMapLength; // 5
-	TGAHeader.ColorMapEntrySize; // 7
+	TGAHeader.ColorMapOrigin = 0; // 3
+	TGAHeader.ColorMapLength = 0; // 5
+	TGAHeader.ColorMapEntrySize = 0; // 7
 	TGAHeader.XOrigin; // 8
 	TGAHeader.YOrigin; // 10
 	TGAHeader.Width = GifFrame->xdim; // 12
@@ -131,8 +131,11 @@ uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGi
 		long FrameIndex = (IndexX - GifFrame->frxo) + ((IndexY - GifFrame->fryo) * GifFrame->frxd);
 		if (GifFrame->tran != GifFrame->bptr[FrameIndex])
 		{
-			// RRGGBBAA
-			OutFrame = (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 24) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B << 8) | 0xFF;
+#if GIF_BIGE
+			OutFrame = 0xFF | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 8) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B << 24);
+#else
+			OutFrame = 0xFF000000 | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 8) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B);
+#endif // GIF_BIGE
 		}
 	}
 
