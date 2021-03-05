@@ -5,6 +5,7 @@
 #include "AssetRegistryModule.h"
 #include "Factories.h"
 #include "Serialization/BufferArchive.h"
+#include "PackageTools.h"
 #include "gif_load/gif_load.h"
 
 
@@ -32,6 +33,8 @@ UObject* UGifFactory::FactoryCreateBinary
 	FFeedbackContext*	Warn
 )
 {
+	CleanUp();
+
 	FGifData GifData;
 	GIF_Load((void*)Buffer, BufferEnd - Buffer, UGifFactory::Frame, 0, (void*)&GifData, 0L);
 
@@ -41,18 +44,22 @@ UObject* UGifFactory::FactoryCreateBinary
 		const uint8* PtrFrameBuffer = FrameBuffer.GetData();
 		const uint8* PtrFrameBufferEnd = PtrFrameBuffer + FrameBuffer.Num();
 
-		FString FileName = FString::Printf(TEXT("%s_%d"), *Name.ToString(), i);
-		LastObject = Cast<UTexture2D>(Super::FactoryCreateBinary(Class, InParent, *FileName, Flags, Context, Type, PtrFrameBuffer, PtrFrameBufferEnd, Warn));
+		FString FileName = UPackageTools::SanitizePackageName(FString::Printf(TEXT("%s_%d"), *Name.ToString(), i));
+		FString NewPackageName = FPackageName::GetLongPackagePath(InParent->GetOutermost()->GetName()) + TEXT("/") + FileName;
+		UPackage* Package = CreatePackage(*NewPackageName);
+		Package->FullyLoad();
+		LastObject = Cast<UTexture2D>(Super::FactoryCreateBinary(Class, Package, *FileName, Flags, Context, Type, PtrFrameBuffer, PtrFrameBufferEnd, Warn));
 		if (LastObject == nullptr)
 		{
 			UE_LOG(LogGifSplitter, Error, TEXT("Failed import gif frame %d / %d"), i + 1, GifData.Buffer.Num());
 			break;
 		}
-		if (i < (GifData.Buffer.Num() - 1))
+		if (i + 1 < GifData.Buffer.Num())
 		{
-			LastObject->PostEditChange();
-			LastObject->MarkPackageDirty();
 			FAssetRegistryModule::AssetCreated(LastObject);
+			LastObject->MarkPackageDirty();
+			LastObject->PostEditChange();
+			AdditionalImportedObjects.Add(LastObject);
 		}
 	}
 	return LastObject;
