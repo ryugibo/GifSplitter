@@ -33,7 +33,8 @@ private:
 
 	static uint32 ParseFrame(long IndexX, long IndexY, struct GIF_WHDR* GifFrame, FGifData* GifData);
 
-	FORCEINLINE static uint32 GetBackground(struct GIF_WHDR* GifFrame);
+	static FORCEINLINE_DEBUGGABLE long GetBackgroundIndex(struct GIF_WHDR* GifFrame);
+	static FORCEINLINE_DEBUGGABLE uint32 GetFrameFromPalette(struct GIF_WHDR* GifFrame, uint32 PaletteIndex);
 
 	static const long INTERLACED_OFFSETS[];
 	static const long INTERLACED_JUMPS[];

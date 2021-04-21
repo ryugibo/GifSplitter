@@ -74,8 +74,9 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 
 	if (GifFrame->ifrm == 0)
 	{
-		GifData->LastValidPixel.Init(GetBackground(GifFrame), GifFrame->xdim * GifFrame->ydim);
-		GifData->BeforePixel.Init(GetBackground(GifFrame), GifFrame->xdim * GifFrame->ydim);
+		uint32 BackgroundColor = GetFrameFromPalette(GifFrame, GetBackgroundIndex(GifFrame));
+		GifData->LastValidPixel.Init(BackgroundColor, GifFrame->xdim * GifFrame->ydim);
+		GifData->BeforePixel.Init(BackgroundColor, GifFrame->xdim * GifFrame->ydim);
 	}
 
 	FTGAFileHeader TGAHeader;
@@ -131,59 +132,78 @@ uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGi
 	check(GifData != nullptr);
 
 	long Index = IndexX + (IndexY * GifFrame->xdim);
+
+	bool IsXInFrame = FMath::IsWithin(IndexX, GifFrame->frxo, GifFrame->frxo + GifFrame->frxd);
+	bool IsYInFrame = FMath::IsWithin(IndexY, GifFrame->fryo, GifFrame->fryo + GifFrame->fryd);
+
 	uint32 OutFrame = 0;
-	if (FMath::IsWithin(IndexX, GifFrame->frxo, GifFrame->frxd) &&
-		FMath::IsWithin(IndexY, GifFrame->fryo, GifFrame->fryd))
+	if (IsXInFrame && IsYInFrame)
 	{
 		long FrameIndex = (IndexX - GifFrame->frxo) + ((IndexY - GifFrame->fryo) * GifFrame->frxd);
-		if (GifFrame->tran != GifFrame->bptr[FrameIndex])
+		uint32 PaletteIndex = GifFrame->bptr[FrameIndex];
+
+		if (PaletteIndex != GetBackgroundIndex(GifFrame))
 		{
-#if GIF_BIGE
-			OutFrame = 0xFF | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 8) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B << 24);
-#else
-			OutFrame = 0xFF000000 | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].R << 16) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].G << 8) | (GifFrame->cpal[GifFrame->bptr[FrameIndex]].B);
-#endif // GIF_BIGE
+			OutFrame = GetFrameFromPalette(GifFrame, PaletteIndex);
 		}
 	}
 
 	if (OutFrame == 0)
 	{
-		OutFrame = GifData->BeforePixel[Index];
+		OutFrame = GifData->LastValidPixel[Index];
 	}
 	else
 	{
 		GifData->LastValidPixel[Index] = OutFrame;
 	}
 
-	switch (GifFrame->mode)
+	if (IsXInFrame && IsYInFrame)
 	{
-	case GIF_NONE:
-	case GIF_CURR:
-		GifData->BeforePixel[Index] = OutFrame;
-		break;
-	case GIF_BKGD:
-		GifData->BeforePixel[Index] = GetBackground(GifFrame);
-		break;
-	case GIF_PREV:
-		GifData->BeforePixel[Index] = GifData->LastValidPixel[Index];
-		break;
+		switch (GifFrame->mode)
+		{
+		case GIF_NONE:
+		case GIF_CURR:
+			GifData->BeforePixel[Index] = OutFrame;
+			break;
+		case GIF_BKGD:
+			GifData->BeforePixel[Index] = GetFrameFromPalette(GifFrame, GetBackgroundIndex(GifFrame));
+			break;
+		case GIF_PREV:
+			GifData->BeforePixel[Index] = GifData->LastValidPixel[Index];
+			break;
+		}
 	}
 
 	return OutFrame;
 }
 
-uint32 UGifFactory::GetBackground(GIF_WHDR* GifFrame)
+long UGifFactory::GetBackgroundIndex(GIF_WHDR* GifFrame)
 {
 	check(GifFrame != nullptr);
 
-	uint32 OutBackground = 0;
-	if (GifFrame->tran >= 0)
+	return (GifFrame->tran >= 0) ? GifFrame->tran : GifFrame->bkgd;
+}
+
+uint32 UGifFactory::GetFrameFromPalette(GIF_WHDR* GifFrame, uint32 PaletteIndex)
+{
+	check(GifFrame != nullptr);
+
+	uint32 OutFrame = 0x00000000;
+
+#if GIF_BIGE
+	OutFrame = (GifFrame->cpal[PaletteIndex].R << 8) | (GifFrame->cpal[PaletteIndex].G << 16) | (GifFrame->cpal[PaletteIndex].B << 24);
+#else
+	OutFrame = (GifFrame->cpal[PaletteIndex].R << 16) | (GifFrame->cpal[PaletteIndex].G << 8) | (GifFrame->cpal[PaletteIndex].B);
+#endif // GIF_BIGE
+
+	if (PaletteIndex != GetBackgroundIndex(GifFrame))
 	{
-		OutBackground = GifFrame->tran;
+#if GIF_BIGE
+		OutFrame = OutFrame | 0xFF;
+#else
+		OutFrame = OutFrame | 0xFF000000;
+#endif // GIF_BIGE
 	}
-	else
-	{
-		OutBackground = GifFrame->bkgd;
-	}
-	return OutBackground;
+
+	return OutFrame;
 }
