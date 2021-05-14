@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.1",
+	"Version": 2,
+	"VersionName": "1.2",
 	"FriendlyName": "GifSplitter",
 	"Description": "gif import to textures per frame",
 	"Category": "Editor",
