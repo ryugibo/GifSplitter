@@ -150,11 +150,11 @@ uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGi
 
 	if (OutFrame == 0)
 	{
-		OutFrame = GifData->LastValidPixel[Index];
+		OutFrame = GifData->BeforePixel[Index];
 	}
 	else
 	{
-		GifData->LastValidPixel[Index] = OutFrame;
+		GifData->BeforePixel[Index] = OutFrame;
 	}
 
 	if (IsXInFrame && IsYInFrame)
