@@ -1,4 +1,4 @@
-// Copyright 2020 Ryugibo, Inc. All Rights Reserved.
+// Copyright ryugibo. All Rights Reserved.
 
 #include "GifFactory.h"
 #include "GifSplitter.h"
