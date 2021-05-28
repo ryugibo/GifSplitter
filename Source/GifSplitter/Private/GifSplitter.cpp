@@ -1,4 +1,4 @@
-// Copyright 2018 Ryugibo, Inc. All Rights Reserved.
+// Copyright ryugibo. All Rights Reserved.
 
 #include "GifSplitter.h"
 
