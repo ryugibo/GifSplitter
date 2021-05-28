@@ -67,8 +67,8 @@ UObject* UGifFactory::FactoryCreateBinary
 
 void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 {
-	check(RawData != nullptr);
-	check(GifFrame != nullptr);
+	checkSlow(RawData != nullptr);
+	checkSlow(GifFrame != nullptr);
 
 	FGifData* GifData = (FGifData*)RawData;
 
@@ -128,8 +128,8 @@ void UGifFactory::Frame(void* RawData, GIF_WHDR* GifFrame)
 
 uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGifData* GifData)
 {
-	check(GifFrame != nullptr);
-	check(GifData != nullptr);
+	checkSlow(GifFrame != nullptr);
+	checkSlow(GifData != nullptr);
 
 	long Index = IndexX + (IndexY * GifFrame->xdim);
 
@@ -179,14 +179,14 @@ uint32 UGifFactory::ParseFrame(long IndexX, long IndexY, GIF_WHDR* GifFrame, FGi
 
 long UGifFactory::GetBackgroundIndex(GIF_WHDR* GifFrame)
 {
-	check(GifFrame != nullptr);
+	checkSlow(GifFrame != nullptr);
 
 	return (GifFrame->tran >= 0) ? GifFrame->tran : GifFrame->bkgd;
 }
 
 uint32 UGifFactory::GetFrameFromPalette(GIF_WHDR* GifFrame, uint32 PaletteIndex)
 {
-	check(GifFrame != nullptr);
+	checkSlow(GifFrame != nullptr);
 
 	uint32 OutFrame = 0x00000000;
 
