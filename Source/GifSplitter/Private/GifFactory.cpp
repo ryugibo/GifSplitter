@@ -188,22 +188,10 @@ uint32 UGifFactory::GetFrameFromPalette(GIF_WHDR* GifFrame, uint32 PaletteIndex)
 {
 	checkSlow(GifFrame != nullptr);
 
-	uint32 OutFrame = 0x00000000;
-
+	uint8 Alpha = ((PaletteIndex == GetBackgroundIndex(GifFrame)) ? 0x00 : 0xFF);
 #if GIF_BIGE
-	OutFrame = (GifFrame->cpal[PaletteIndex].R << 8) | (GifFrame->cpal[PaletteIndex].G << 16) | (GifFrame->cpal[PaletteIndex].B << 24);
+	return Alpha | (GifFrame->cpal[PaletteIndex].R << 8) | (GifFrame->cpal[PaletteIndex].G << 16) | (GifFrame->cpal[PaletteIndex].B << 24);
 #else
-	OutFrame = (GifFrame->cpal[PaletteIndex].R << 16) | (GifFrame->cpal[PaletteIndex].G << 8) | (GifFrame->cpal[PaletteIndex].B);
+	return Alpha << 24 | (GifFrame->cpal[PaletteIndex].R << 16) | (GifFrame->cpal[PaletteIndex].G << 8) | (GifFrame->cpal[PaletteIndex].B);
 #endif // GIF_BIGE
-
-	if (PaletteIndex != GetBackgroundIndex(GifFrame))
-	{
-#if GIF_BIGE
-		OutFrame = OutFrame | 0xFF;
-#else
-		OutFrame = OutFrame | 0xFF000000;
-#endif // GIF_BIGE
-	}
-
-	return OutFrame;
 }
