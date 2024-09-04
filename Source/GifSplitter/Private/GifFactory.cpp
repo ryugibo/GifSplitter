@@ -2,12 +2,12 @@
 
 #include "GifFactory.h"
 #include "GifSplitter.h"
-#include "AssetRegistryModule.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Factories.h"
 #include "Serialization/BufferArchive.h"
 #include "PackageTools.h"
+#include "TgaImageSupport.h"
 #include "gif_load/gif_load.h"
-
 
 const long UGifFactory::INTERLACED_OFFSETS[] = { 0, 4, 2, 1 };
 const long UGifFactory::INTERLACED_JUMPS[] = { 8, 8, 4, 2 };

@@ -10,7 +10,7 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "https://github.com/ryugibo/GifSplitter/issues",
-	"EngineVersion": "4.27.0",
+	"EngineVersion": "5.4.0",
 	"CanContainContent": false,
 	"EnabledByDefault": false,
 	"IsBetaVersion": false,

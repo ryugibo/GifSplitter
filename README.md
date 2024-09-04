@@ -1,6 +1,6 @@
 # GifSplitter
 
-gif importer plugin for unreal engine 4.
+gif importer plugin for unreal engine 5.
 
 ## How to use
 
